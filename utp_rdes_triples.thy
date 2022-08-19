@@ -8,66 +8,68 @@ subsection \<open> Diamond notation\<close>
 
 definition wait'_cond ::
   "('t::trace,'\<alpha>,'\<beta>) rel_rp \<Rightarrow> ('t,'\<alpha>,'\<beta>) rel_rp \<Rightarrow> ('t,'\<alpha>,'\<beta>) rel_rp" (infixr "\<diamondop>" 60) where
-[upred_defs]: "P \<diamondop> Q = (P \<triangleleft> $wait\<acute> \<triangleright> Q)"
+[pred]: "P \<diamondop> Q = (P \<triangleleft> wait\<^sup>> \<triangleright> Q)"
 
-utp_const wait'_cond
+expr_constructor wait'_cond
 
 lemma wait'_cond_unrest [unrest]:
-  "\<lbrakk> out_var wait \<bowtie> x; x \<sharp> P; x \<sharp> Q \<rbrakk> \<Longrightarrow> x \<sharp> (P \<diamondop> Q)"
-  by (simp add: wait'_cond_def unrest)
+  "\<lbrakk> mwb_lens x; (wait\<^sup>>)\<^sub>v \<bowtie> x; $x \<sharp> P; $x \<sharp> Q \<rbrakk> \<Longrightarrow> $x \<sharp> (P \<diamondop> Q)"
+  by (metis (mono_tags, lifting) SEXP_def aext_var lens_indep.lens_put_irr2 lens_indep_sym unrest_cond unrest_lens  wait'_cond_def)
 
 lemma wait'_cond_subst [usubst]:
-  "$wait\<acute> \<sharp>\<^sub>s \<sigma> \<Longrightarrow> \<sigma> \<dagger> (P \<diamondop> Q) = (\<sigma> \<dagger> P) \<diamondop> (\<sigma> \<dagger> Q)"
-  by (simp add: wait'_cond_def usubst unrest usubst_apply_unrest)
+  "$wait\<^sup>> \<sharp>\<^sub>s \<sigma> \<Longrightarrow> \<sigma> \<dagger> (P \<diamondop> Q) = (\<sigma> \<dagger> P) \<diamondop> (\<sigma> \<dagger> Q)"
+  apply (simp add: wait'_cond_def usubst unrest usubst_apply_unrest)
+  (* TODO: get proof working *)
+  oops
 
-lemma wait'_cond_left_false: "false \<diamondop> P = (\<not> $wait\<acute> \<and> P)"
-  by (rel_auto)
+lemma wait'_cond_left_false: "false \<diamondop> P = (\<not> wait\<^sup>> \<and> P)"
+  by pred_auto
 
-lemma wait'_cond_seq: "((P \<diamondop> Q) ;; R) = ((P ;; ($wait \<and> R)) \<or> (Q ;; (\<not>$wait \<and> R)))"
-  by (simp add: wait'_cond_def cond_def seqr_or_distl, rel_blast)
+lemma wait'_cond_seq: "((P \<diamondop> Q) ;; R) = ((P ;; (wait\<^sup>< \<and> R)) \<or> (Q ;; (\<not>wait\<^sup>< \<and> R)))"
+  by (simp add: wait'_cond_def rcond_def seqr_or_distl, pred_auto; blast)
 
-lemma wait'_cond_true: "(P \<diamondop> Q \<and> $wait\<acute>) = (P \<and> $wait\<acute>)"
-  by (rel_auto)
+lemma wait'_cond_true: "(P \<diamondop> Q \<and> wait\<^sup>>) = (P \<and> wait\<^sup>>)"
+  by pred_auto
 
-lemma wait'_cond_false: "(P \<diamondop> Q \<and> (\<not>$wait\<acute>)) = (Q \<and> (\<not>$wait\<acute>))"
-  by (rel_auto)
+lemma wait'_cond_false: "(P \<diamondop> Q \<and> (\<not>wait\<^sup>>)) = (Q \<and> (\<not>wait\<^sup>>))"
+  by pred_auto
 
 lemma wait'_cond_idem: "P \<diamondop> P = P"
-  by (rel_auto)
+  by pred_auto
 
 lemma wait'_cond_conj_exchange:
   "((P \<diamondop> Q) \<and> (R \<diamondop> S)) = (P \<and> R) \<diamondop> (Q \<and> S)"
-  by (rel_auto)
+  by pred_auto
 
-lemma subst_wait'_cond_true [usubst]: "(P \<diamondop> Q)\<lbrakk>true/$wait\<acute>\<rbrakk> = P\<lbrakk>true/$wait\<acute>\<rbrakk>"
-  by (rel_auto)
+lemma subst_wait'_cond_true [usubst]: "(P \<diamondop> Q)\<lbrakk>True/wait\<^sup>>\<rbrakk> = P\<lbrakk>True/wait\<^sup>>\<rbrakk>"
+  by pred_auto
 
-lemma subst_wait'_cond_false [usubst]: "(P \<diamondop> Q)\<lbrakk>false/$wait\<acute>\<rbrakk> = Q\<lbrakk>false/$wait\<acute>\<rbrakk>"
-  by (rel_auto)
+lemma subst_wait'_cond_false [usubst]: "(P \<diamondop> Q)\<lbrakk>False/wait\<^sup>>\<rbrakk> = Q\<lbrakk>False/wait\<^sup>>\<rbrakk>"
+  by pred_auto
 
-lemma subst_wait'_left_subst: "(P\<lbrakk>true/$wait\<acute>\<rbrakk> \<diamondop> Q) = (P \<diamondop> Q)"
-  by (rel_auto)
+lemma subst_wait'_left_subst: "(P\<lbrakk>True/wait\<^sup>>\<rbrakk> \<diamondop> Q) = (P \<diamondop> Q)"
+  by pred_auto
 
-lemma subst_wait'_right_subst: "(P \<diamondop> Q\<lbrakk>false/$wait\<acute>\<rbrakk>) = (P \<diamondop> Q)"
-  by (rel_auto)
+lemma subst_wait'_right_subst: "(P \<diamondop> Q\<lbrakk>False/wait\<^sup>>\<rbrakk>) = (P \<diamondop> Q)"
+  by pred_auto
 
-lemma wait'_cond_split: "P\<lbrakk>true/$wait\<acute>\<rbrakk> \<diamondop> P\<lbrakk>false/$wait\<acute>\<rbrakk> = P"
-  by (simp add: wait'_cond_def cond_var_split)
+lemma wait'_cond_split: "P\<lbrakk>True/wait\<^sup>>\<rbrakk> \<diamondop> P\<lbrakk>False/wait\<^sup>>\<rbrakk> = P"
+  by (simp add: subst_wait'_left_subst subst_wait'_right_subst wait'_cond_idem)
 
 lemma wait_cond'_assoc [simp]: "P \<diamondop> Q \<diamondop> R = P \<diamondop> R"
-  by (rel_auto)
+  by pred_auto
 
 lemma wait_cond'_shadow: "(P \<diamondop> Q) \<diamondop> R = P \<diamondop> Q \<diamondop> R"
-  by (rel_auto)
+  by pred_auto
 
 lemma wait_cond'_conj [simp]: "P \<diamondop> (Q \<and> (R \<diamondop> S)) = P \<diamondop> (Q \<and> S)"
-  by (rel_auto)
+  by pred_auto
 
 lemma R1_wait'_cond: "R1(P \<diamondop> Q) = R1(P) \<diamondop> R1(Q)"
-  by (rel_auto)
+  by pred_auto
 
 lemma R2s_wait'_cond: "R2s(P \<diamondop> Q) = R2s(P) \<diamondop> R2s(Q)"
-  by (simp add: wait'_cond_def R2s_def R2s_def usubst)
+  by pred_auto
 
 lemma R2_wait'_cond: "R2(P \<diamondop> Q) = R2(P) \<diamondop> R2(Q)"
   by (simp add: R2_def R2s_wait'_cond R1_wait'_cond)
@@ -77,36 +79,44 @@ lemma wait'_cond_R1_closed [closure]:
   by (simp add: Healthy_def R1_wait'_cond)
 
 lemma wait'_cond_R2c_closed [closure]: "\<lbrakk> P is R2c; Q is R2c \<rbrakk> \<Longrightarrow> P \<diamondop> Q is R2c"
-  by (simp add: R2c_condr wait'_cond_def Healthy_def, rel_auto)
+  by (simp add: R2c_condr wait'_cond_def Healthy_def, pred_auto)
 
 subsection \<open> Export laws \<close>
 
 lemma RH_design_peri_R1: "\<^bold>R(P \<turnstile> R1(Q) \<diamondop> R) = \<^bold>R(P \<turnstile> Q \<diamondop> R)"
-  by (metis (no_types, lifting) R1_idem R1_wait'_cond RH_design_export_R1)
+  by pred_auto
+(*  by (metis (no_types, lifting) R1_idem R1_wait'_cond RH_design_export_R1) *)
 
 lemma RH_design_post_R1: "\<^bold>R(P \<turnstile> Q \<diamondop> R1(R)) = \<^bold>R(P \<turnstile> Q \<diamondop> R)"
-  by (metis R1_wait'_cond RH_design_export_R1 RH_design_peri_R1)
+  by pred_auto
+(*  by (metis R1_wait'_cond RH_design_export_R1 RH_design_peri_R1) *)
 
 lemma RH_design_peri_R2s: "\<^bold>R(P \<turnstile> R2s(Q) \<diamondop> R) = \<^bold>R(P \<turnstile> Q \<diamondop> R)"
-  by (metis (no_types, lifting) R2s_idem R2s_wait'_cond RH_design_export_R2s)
+  by pred_auto
+(*  by (metis (no_types, lifting) R2s_idem R2s_wait'_cond RH_design_export_R2s) *)
 
 lemma RH_design_post_R2s: "\<^bold>R(P \<turnstile> Q \<diamondop> R2s(R)) = \<^bold>R(P \<turnstile> Q \<diamondop> R)"
-  by (metis (no_types, lifting) R2s_idem R2s_wait'_cond RH_design_export_R2s)
+  by pred_auto
+(*  by (metis (no_types, lifting) R2s_idem R2s_wait'_cond RH_design_export_R2s) *)
 
 lemma RH_design_peri_R2c: "\<^bold>R(P \<turnstile> R2c(Q) \<diamondop> R) = \<^bold>R(P \<turnstile> Q \<diamondop> R)"
   by (metis R1_R2s_R2c RH_design_peri_R1 RH_design_peri_R2s)
 
 lemma RHS_design_peri_R1: "\<^bold>R\<^sub>s(P \<turnstile> R1(Q) \<diamondop> R) = \<^bold>R\<^sub>s(P \<turnstile> Q \<diamondop> R)"
-  by (metis (no_types, lifting) R1_idem R1_wait'_cond RHS_design_export_R1)
+  by (pred_simp; blast)
+(*  by (metis (no_types, lifting) R1_idem R1_wait'_cond RHS_design_export_R1) *)
 
 lemma RHS_design_post_R1: "\<^bold>R\<^sub>s(P \<turnstile> Q \<diamondop> R1(R)) = \<^bold>R\<^sub>s(P \<turnstile> Q \<diamondop> R)"
-  by (metis R1_wait'_cond RHS_design_export_R1 RHS_design_peri_R1)
+  by pred_auto
+(*  by (metis R1_wait'_cond RHS_design_export_R1 RHS_design_peri_R1) *)
 
 lemma RHS_design_peri_R2s: "\<^bold>R\<^sub>s(P \<turnstile> R2s(Q) \<diamondop> R) = \<^bold>R\<^sub>s(P \<turnstile> Q \<diamondop> R)"
-  by (metis (no_types, lifting) R2s_idem R2s_wait'_cond RHS_design_export_R2s)
+  by pred_auto
+(*  by (metis (no_types, lifting) R2s_idem R2s_wait'_cond RHS_design_export_R2s) *)
 
 lemma RHS_design_post_R2s: "\<^bold>R\<^sub>s(P \<turnstile> Q \<diamondop> R2s(R)) = \<^bold>R\<^sub>s(P \<turnstile> Q \<diamondop> R)"
-  by (metis R2s_wait'_cond RHS_design_export_R2s RHS_design_peri_R2s)
+  by pred_auto
+(*  by (metis R2s_wait'_cond RHS_design_export_R2s RHS_design_peri_R2s) *)
 
 lemma RHS_design_peri_R2c: "\<^bold>R\<^sub>s(P \<turnstile> R2c(Q) \<diamondop> R) = \<^bold>R\<^sub>s(P \<turnstile> Q \<diamondop> R)"
   by (metis R1_R2s_R2c RHS_design_peri_R1 RHS_design_peri_R2s)
@@ -123,151 +133,160 @@ subsection \<open> Pre-, peri-, and postconditions \<close>
 
 subsubsection \<open> Definitions \<close>
 
-abbreviation "pre\<^sub>s  \<equiv> [$ok \<mapsto>\<^sub>s true, $ok\<acute> \<mapsto>\<^sub>s false, $wait \<mapsto>\<^sub>s false]"
-abbreviation "cmt\<^sub>s  \<equiv> [$ok \<mapsto>\<^sub>s true, $ok\<acute> \<mapsto>\<^sub>s true, $wait \<mapsto>\<^sub>s false]"
-abbreviation "peri\<^sub>s \<equiv> [$ok \<mapsto>\<^sub>s true, $ok\<acute> \<mapsto>\<^sub>s true, $wait \<mapsto>\<^sub>s false, $wait\<acute> \<mapsto>\<^sub>s true]"
-abbreviation "post\<^sub>s \<equiv> [$ok \<mapsto>\<^sub>s true, $ok\<acute> \<mapsto>\<^sub>s true, $wait \<mapsto>\<^sub>s false, $wait\<acute> \<mapsto>\<^sub>s false]"
+abbreviation "pre\<^sub>s  \<equiv> [ok\<^sup>< \<leadsto> True, ok\<^sup>> \<leadsto> False, wait\<^sup>< \<leadsto> False]"
+abbreviation "cmt\<^sub>s  \<equiv> [ok\<^sup>< \<leadsto> True, ok\<^sup>> \<leadsto> True, wait\<^sup>< \<leadsto> False]"
+abbreviation "peri\<^sub>s \<equiv> [ok\<^sup>< \<leadsto> True, ok\<^sup>> \<leadsto> True, wait\<^sup>< \<leadsto> False, wait\<^sup>> \<leadsto> True]"
+abbreviation "post\<^sub>s \<equiv> [ok\<^sup>< \<leadsto> True, ok\<^sup>> \<leadsto> True, wait\<^sup>< \<leadsto> False, wait\<^sup>> \<leadsto> False]"
 
 abbreviation "npre\<^sub>R(P) \<equiv> pre\<^sub>s \<dagger> P"
 
-definition [upred_defs]: "pre\<^sub>R(P)  = (\<not>\<^sub>r npre\<^sub>R(P))"
-definition [upred_defs]: "cmt\<^sub>R(P)  = R1(cmt\<^sub>s \<dagger> P)"
-definition [upred_defs]: "peri\<^sub>R(P) = R1(peri\<^sub>s \<dagger> P)"
-definition [upred_defs]: "post\<^sub>R(P) = R1(post\<^sub>s \<dagger> P)"
+definition [pred]: "pre\<^sub>R(P)  = (\<not>\<^sub>r npre\<^sub>R(P))"
+definition [pred]: "cmt\<^sub>R(P)  = R1(cmt\<^sub>s \<dagger> P)"
+definition [pred]: "peri\<^sub>R(P) = R1(peri\<^sub>s \<dagger> P)"
+definition [pred]: "post\<^sub>R(P) = R1(post\<^sub>s \<dagger> P)"
 
-no_utp_lift pre\<^sub>R cmt\<^sub>R peri\<^sub>R post\<^sub>R npre\<^sub>R
+expr_constructor pre\<^sub>R cmt\<^sub>R peri\<^sub>R post\<^sub>R npre\<^sub>R
 
 subsubsection \<open> Unrestriction laws \<close>
 
-lemma ok_pre_unrest [unrest]: "$ok \<sharp> pre\<^sub>R P"
-  by (simp add: pre\<^sub>R_def unrest usubst)
+lemma ok_pre_unrest [unrest]: "$ok\<^sup>< \<sharp> pre\<^sub>R P"
+  by pred_auto
+  
+lemma ok_peri_unrest [unrest]: "$ok\<^sup>< \<sharp> peri\<^sub>R P"
+  by pred_auto
 
-lemma ok_peri_unrest [unrest]: "$ok \<sharp> peri\<^sub>R P"
-  by (simp add: peri\<^sub>R_def unrest usubst)
+lemma ok_post_unrest [unrest]: "$ok\<^sup>< \<sharp> post\<^sub>R P"
+  by pred_auto
 
-lemma ok_post_unrest [unrest]: "$ok \<sharp> post\<^sub>R P"
-  by (simp add: post\<^sub>R_def unrest usubst)
+lemma ok_cmt_unrest [unrest]: "$ok\<^sup>< \<sharp> cmt\<^sub>R P"
+  by pred_auto
 
-lemma ok_cmt_unrest [unrest]: "$ok \<sharp> cmt\<^sub>R P"
-  by (simp add: cmt\<^sub>R_def unrest usubst)
+lemma ok'_pre_unrest [unrest]: "$ok\<^sup>> \<sharp> pre\<^sub>R P"
+  by pred_auto
 
-lemma ok'_pre_unrest [unrest]: "$ok\<acute> \<sharp> pre\<^sub>R P"
-  by (simp add: pre\<^sub>R_def unrest usubst)
+lemma ok'_peri_unrest [unrest]: "$ok\<^sup>> \<sharp> peri\<^sub>R P"
+  by pred_auto
 
-lemma ok'_peri_unrest [unrest]: "$ok\<acute> \<sharp> peri\<^sub>R P"
-  by (simp add: peri\<^sub>R_def unrest usubst)
+lemma ok'_post_unrest [unrest]: "$ok\<^sup>> \<sharp> post\<^sub>R P"
+  by pred_auto
 
-lemma ok'_post_unrest [unrest]: "$ok\<acute> \<sharp> post\<^sub>R P"
-  by (simp add: post\<^sub>R_def unrest usubst)
+lemma ok'_cmt_unrest [unrest]: "$ok\<^sup>> \<sharp> cmt\<^sub>R P"
+  by pred_auto
 
-lemma ok'_cmt_unrest [unrest]: "$ok\<acute> \<sharp> cmt\<^sub>R P"
-  by (simp add: cmt\<^sub>R_def unrest usubst)
+lemma wait_pre_unrest [unrest]: "$wait\<^sup>< \<sharp> pre\<^sub>R P"
+  by pred_auto
 
-lemma wait_pre_unrest [unrest]: "$wait \<sharp> pre\<^sub>R P"
-  by (simp add: pre\<^sub>R_def unrest usubst)
+lemma wait_peri_unrest [unrest]: "$wait\<^sup>< \<sharp> peri\<^sub>R P"
+  by pred_auto
 
-lemma wait_peri_unrest [unrest]: "$wait \<sharp> peri\<^sub>R P"
-  by (simp add: peri\<^sub>R_def unrest usubst)
+lemma wait_post_unrest [unrest]: "$wait\<^sup>< \<sharp> post\<^sub>R P"
+  by pred_auto
 
-lemma wait_post_unrest [unrest]: "$wait \<sharp> post\<^sub>R P"
-  by (simp add: post\<^sub>R_def unrest usubst)
+lemma wait_cmt_unrest [unrest]: "$wait\<^sup>< \<sharp> cmt\<^sub>R P"
+  by pred_auto
 
-lemma wait_cmt_unrest [unrest]: "$wait \<sharp> cmt\<^sub>R P"
-  by (simp add: cmt\<^sub>R_def unrest usubst)
+lemma wait'_peri_unrest [unrest]: "$wait\<^sup>> \<sharp> peri\<^sub>R P"
+  by pred_auto
 
-lemma wait'_peri_unrest [unrest]: "$wait\<acute> \<sharp> peri\<^sub>R P"
-  by (simp add: peri\<^sub>R_def unrest usubst)
-
-lemma wait'_post_unrest [unrest]: "$wait\<acute> \<sharp> post\<^sub>R P"
-  by (simp add: post\<^sub>R_def unrest usubst)
+lemma wait'_post_unrest [unrest]: "$wait\<^sup>> \<sharp> post\<^sub>R P"
+  by pred_auto
 
 subsubsection \<open> Substitution laws \<close>
 
 lemma pre\<^sub>s_design: "pre\<^sub>s \<dagger> (P \<turnstile> Q) = (\<not> pre\<^sub>s \<dagger> P)"
-  by (simp add: design_def pre\<^sub>R_def usubst)
+  by pred_auto
 
-lemma peri\<^sub>s_design: "peri\<^sub>s \<dagger> (P \<turnstile> Q \<diamondop> R) = peri\<^sub>s \<dagger> (P \<Rightarrow> Q)"
-  by (simp add: design_def usubst wait'_cond_def)
+lemma peri\<^sub>s_design: "peri\<^sub>s \<dagger> (P \<turnstile> Q \<diamondop> R) = peri\<^sub>s \<dagger> (P \<longrightarrow> Q)"
+  by pred_auto
 
-lemma post\<^sub>s_design: "post\<^sub>s \<dagger> (P \<turnstile> Q \<diamondop> R) = post\<^sub>s \<dagger> (P \<Rightarrow> R)"
-  by (simp add: design_def usubst wait'_cond_def)
+lemma design_alt_def: "(P \<turnstile> Q) = (ok\<^sup>< \<and> P \<longrightarrow> ok\<^sup>> \<and> Q)"
+  by pred_auto
 
-lemma cmt\<^sub>s_design: "cmt\<^sub>s \<dagger> (P \<turnstile> Q) = cmt\<^sub>s \<dagger> (P \<Rightarrow> Q)"
-  by (simp add: design_def usubst wait'_cond_def)
+(* Something wrong here! *)
+lemma post\<^sub>s_design: "post\<^sub>s \<dagger> (P \<turnstile> Q \<diamondop> R) = post\<^sub>s \<dagger> (P \<longrightarrow> R)"
+  apply (simp add: design_alt_def usubst wait'_cond_def)
+  apply(pred_auto)
+  oops
 
+lemma cmt\<^sub>s_design: "cmt\<^sub>s \<dagger> (P \<turnstile> Q) = cmt\<^sub>s \<dagger> (P \<longrightarrow> Q)"
+  by pred_auto
+  
 lemma pre\<^sub>s_R1 [usubst]: "pre\<^sub>s \<dagger> R1(P) = R1(pre\<^sub>s \<dagger> P)"
   by (simp add: R1_def usubst)
 
 lemma pre\<^sub>s_R2c [usubst]: "pre\<^sub>s \<dagger> R2c(P) = R2c(pre\<^sub>s \<dagger> P)"
-  by (simp add: R2c_def R2s_def usubst)
+  by pred_auto
 
 lemma peri\<^sub>s_R1 [usubst]: "peri\<^sub>s \<dagger> R1(P) = R1(peri\<^sub>s \<dagger> P)"
   by (simp add: R1_def usubst)
 
 lemma peri\<^sub>s_R2c [usubst]: "peri\<^sub>s \<dagger> R2c(P) = R2c(peri\<^sub>s \<dagger> P)"
-  by (simp add: R2c_def R2s_def usubst)
+  by pred_auto
 
 lemma post\<^sub>s_R1 [usubst]: "post\<^sub>s \<dagger> R1(P) = R1(post\<^sub>s \<dagger> P)"
   by (simp add: R1_def usubst)
 
 lemma post\<^sub>s_R2c [usubst]: "post\<^sub>s \<dagger> R2c(P) = R2c(post\<^sub>s \<dagger> P)"
-  by (simp add: R2c_def R2s_def usubst)
+  by pred_auto
 
 lemma cmt\<^sub>s_R1 [usubst]: "cmt\<^sub>s \<dagger> R1(P) = R1(cmt\<^sub>s \<dagger> P)"
   by (simp add: R1_def usubst)
 
 lemma cmt\<^sub>s_R2c [usubst]: "cmt\<^sub>s \<dagger> R2c(P) = R2c(cmt\<^sub>s \<dagger> P)"
-  by (simp add: R2c_def R2s_def usubst)
+  by pred_auto
 
 lemma pre_wait_false:
-  "pre\<^sub>R(P\<lbrakk>false/$wait\<rbrakk>) = pre\<^sub>R(P)"
-  by (rel_auto)
+  "pre\<^sub>R(P\<lbrakk>False/wait\<^sup><\<rbrakk>) = pre\<^sub>R(P)"
+  by pred_auto
 
 lemma cmt_wait_false:
-  "cmt\<^sub>R(P\<lbrakk>false/$wait\<rbrakk>) = cmt\<^sub>R(P)"
-  by (rel_auto)
+  "cmt\<^sub>R(P\<lbrakk>False/wait\<^sup><\<rbrakk>) = cmt\<^sub>R(P)"
+  by pred_auto
 
 lemma rea_pre_RH_design: "pre\<^sub>R(\<^bold>R(P \<turnstile> Q)) = R1(R2c(pre\<^sub>s \<dagger> P))"
-  by (simp add: RH_def usubst R3c_def pre\<^sub>R_def pre\<^sub>s_design R1_negate_R1 R2c_not rea_not_def)
+  by pred_auto
 
 lemma rea_pre_RHS_design: "pre\<^sub>R(\<^bold>R\<^sub>s(P \<turnstile> Q)) = R1(R2c(pre\<^sub>s \<dagger> P))"
-  by (simp add: RHS_def usubst R3h_def pre\<^sub>R_def pre\<^sub>s_design R1_negate_R1 R2c_not rea_not_def)
+  by pred_auto
 
-lemma rea_cmt_RH_design: "cmt\<^sub>R(\<^bold>R(P \<turnstile> Q)) = R1(R2c(cmt\<^sub>s \<dagger> (P \<Rightarrow> Q)))"
-  by (simp add: RH_def usubst R3c_def cmt\<^sub>R_def cmt\<^sub>s_design R1_idem)
+lemma rea_cmt_RH_design: "cmt\<^sub>R(\<^bold>R(P \<turnstile> Q)) = R1(R2c(cmt\<^sub>s \<dagger> (P \<longrightarrow> Q)))"
+  by pred_auto
 
-lemma rea_cmt_RHS_design: "cmt\<^sub>R(\<^bold>R\<^sub>s(P \<turnstile> Q)) = R1(R2c(cmt\<^sub>s \<dagger> (P \<Rightarrow> Q)))"
-  by (simp add: RHS_def usubst R3h_def cmt\<^sub>R_def cmt\<^sub>s_design R1_idem)
+lemma rea_cmt_RHS_design: "cmt\<^sub>R(\<^bold>R\<^sub>s(P \<turnstile> Q)) = R1(R2c(cmt\<^sub>s \<dagger> (P \<longrightarrow> Q)))"
+  by pred_auto
 
-lemma rea_peri_RH_design: "peri\<^sub>R(\<^bold>R(P \<turnstile> Q \<diamondop> R)) = R1(R2c(peri\<^sub>s \<dagger> (P \<Rightarrow>\<^sub>r Q)))"
-  by rel_auto
+lemma rea_peri_RH_design: "peri\<^sub>R(\<^bold>R(P \<turnstile> Q \<diamondop> R)) = R1(R2c(peri\<^sub>s \<dagger> (P \<longrightarrow>\<^sub>r Q)))"
+  by pred_auto
 
-lemma rea_peri_RHS_design: "peri\<^sub>R(\<^bold>R\<^sub>s(P \<turnstile> Q \<diamondop> R)) = R1(R2c(peri\<^sub>s \<dagger> (P \<Rightarrow>\<^sub>r Q)))"
-  by (simp add:RHS_def usubst peri\<^sub>R_def R3h_def peri\<^sub>s_design, rel_auto)
+lemma rea_peri_RHS_design: "peri\<^sub>R(\<^bold>R\<^sub>s(P \<turnstile> Q \<diamondop> R)) = R1(R2c(peri\<^sub>s \<dagger> (P \<longrightarrow>\<^sub>r Q)))"
+  by pred_auto
 
-lemma rea_post_RH_design: "post\<^sub>R(\<^bold>R(P \<turnstile> Q \<diamondop> R)) = R1(R2c(post\<^sub>s \<dagger> (P \<Rightarrow>\<^sub>r R)))"
-  by rel_auto
+lemma rea_post_RH_design: "post\<^sub>R(\<^bold>R(P \<turnstile> Q \<diamondop> R)) = R1(R2c(post\<^sub>s \<dagger> (P \<longrightarrow>\<^sub>r R)))"
+  (* TODO: fix proof *)
+  oops
 
-lemma rea_post_RHS_design: "post\<^sub>R(\<^bold>R\<^sub>s(P \<turnstile> Q \<diamondop> R)) = R1(R2c(post\<^sub>s \<dagger> (P \<Rightarrow>\<^sub>r R)))"
-  by (simp add:RHS_def usubst post\<^sub>R_def R3h_def post\<^sub>s_design, rel_auto)
+lemma rea_post_RHS_design: "post\<^sub>R(\<^bold>R\<^sub>s(P \<turnstile> Q \<diamondop> R)) = R1(R2c(post\<^sub>s \<dagger> (P \<longrightarrow>\<^sub>r R)))"
+  oops
+  (* TODO: fix proof *)
+(*  by (simp add:RHS_def usubst post\<^sub>R_def R3h_def post\<^sub>s_design, rel_auto) *)
 
-lemma peri_cmt_def: "peri\<^sub>R(P) = (cmt\<^sub>R(P))\<lbrakk>true/$wait\<acute>\<rbrakk>"
-  by (rel_auto)
+lemma peri_cmt_def: "peri\<^sub>R(P) = (cmt\<^sub>R(P))\<lbrakk>True/wait\<^sup>>\<rbrakk>"
+  by pred_auto
 
-lemma post_cmt_def: "post\<^sub>R(P) = (cmt\<^sub>R(P))\<lbrakk>false/$wait\<acute>\<rbrakk>"
-  by (rel_auto)
+lemma post_cmt_def: "post\<^sub>R(P) = (cmt\<^sub>R(P))\<lbrakk>False/wait\<^sup>>\<rbrakk>"
+  by pred_auto
 
-lemma rdes_export_cmt: "\<^bold>R\<^sub>s(P \<turnstile> cmt\<^sub>s \<dagger> Q) = \<^bold>R\<^sub>s(P \<turnstile> Q)"
-  by (rel_auto)
+lemma rdes_export_cmt: "\<^bold>R\<^sub>s(P \<turnstile> (cmt\<^sub>s \<dagger> Q)) = \<^bold>R\<^sub>s(P \<turnstile> Q)"
+  by pred_auto
 
-lemma rdes_export_pre: "\<^bold>R\<^sub>s((P\<lbrakk>true,false/$ok,$wait\<rbrakk>) \<turnstile> Q) = \<^bold>R\<^sub>s(P \<turnstile> Q)"
-  by (rel_auto)
+lemma rdes_export_pre: "\<^bold>R\<^sub>s((P\<lbrakk>True,False/ok\<^sup><,wait\<^sup><\<rbrakk>) \<turnstile> Q) = \<^bold>R\<^sub>s(P \<turnstile> Q)"
+  by pred_auto
 
 subsubsection \<open> Healthiness laws \<close>
 
 lemma wait'_unrest_pre_SRD [unrest]:
-  "$wait\<acute> \<sharp> pre\<^sub>R(P) \<Longrightarrow>  $wait\<acute> \<sharp> pre\<^sub>R (SRD P)"
-  apply (rel_auto)
+  "$wait\<^sup>> \<sharp> pre\<^sub>R(P) \<Longrightarrow>  $wait\<^sup>> \<sharp> pre\<^sub>R (SRD P)"
+  apply (pred_auto)
   using least_zero apply blast+
 done
 
@@ -276,11 +295,15 @@ lemma R1_R2s_cmt_SRD:
   shows "R1(R2s(cmt\<^sub>R(P))) = cmt\<^sub>R(P)"
   by (metis (no_types, lifting) R1_R2c_commute R1_R2s_R2c R1_idem R2c_idem SRD_reactive_design assms rea_cmt_RHS_design)
 
+(* TODO: proof not working *)
+(*
 lemma R1_R2s_peri_SRD:
   assumes "P is SRD"
   shows "R1(R2s(peri\<^sub>R(P))) = peri\<^sub>R(P)"
   by (metis (no_types, opaque_lifting) Healthy_def R1_R2s_R2c R2_def R2_idem RHS_def SRD_RH_design_form assms R1_idem peri\<^sub>R_def peri\<^sub>s_R1 peri\<^sub>s_R2c)
+*)
 
+(* TODO: fix proof
 lemma R1_peri_SRD:
   assumes "P is SRD"
   shows "R1(peri\<^sub>R(P)) = peri\<^sub>R(P)"
@@ -291,7 +314,9 @@ proof -
     by (simp add: R1_idem, simp add: R1_R2s_peri_SRD assms)
   finally show ?thesis .
 qed
+*)
 
+(* TODO: fix proof
 lemma R1_R2c_peri_RHS:
   assumes "P is SRD"
   shows "R1(R2c(peri\<^sub>R(P))) = peri\<^sub>R(P)"
@@ -402,13 +427,16 @@ lemma trace_ident_left_postR:
 lemma trace_ident_right_postR:
   "post\<^sub>R(P) ;; ($tr\<acute> =\<^sub>u $tr \<and> \<lceil>II\<rceil>\<^sub>R) = post\<^sub>R(P)"
   by (rel_auto)
+*)
 
 subsubsection \<open> Calculation laws \<close>
 
 lemma wait'_cond_peri_post_cmt [rdes]:
   "cmt\<^sub>R P = peri\<^sub>R P \<diamondop> post\<^sub>R P"
-  by (rel_auto)
+  by pred_auto
+     (metis (full_types))
 
+(* TODO: fix proof
 lemma preR_rdes [rdes]: 
   assumes "P is RR"
   shows "pre\<^sub>R(\<^bold>R(P \<turnstile> Q \<diamondop> R)) = P"
@@ -418,25 +446,27 @@ lemma preR_srdes [rdes]:
   assumes "P is RR"
   shows "pre\<^sub>R(\<^bold>R\<^sub>s(P \<turnstile> Q \<diamondop> R)) = P"
   by (simp add: rea_pre_RHS_design unrest usubst assms Healthy_if RR_implies_R2c RR_implies_R1)
+*)
 
 lemma periR_rdes [rdes]: 
   assumes "P is RR" "Q is RR"
-  shows "peri\<^sub>R(\<^bold>R(P \<turnstile> Q \<diamondop> R)) = (P \<Rightarrow>\<^sub>r Q)"
+  shows "peri\<^sub>R(\<^bold>R(P \<turnstile> Q \<diamondop> R)) = (P \<longrightarrow>\<^sub>r Q)"
   by (simp add: rea_peri_RH_design unrest usubst assms Healthy_if RR_implies_R2c closure)
 
 lemma periR_srdes [rdes]: 
   assumes "P is RR" "Q is RR"
-  shows "peri\<^sub>R(\<^bold>R\<^sub>s(P \<turnstile> Q \<diamondop> R)) = (P \<Rightarrow>\<^sub>r Q)"
+  shows "peri\<^sub>R(\<^bold>R\<^sub>s(P \<turnstile> Q \<diamondop> R)) = (P \<longrightarrow>\<^sub>r Q)"
   by (simp add: rea_peri_RHS_design unrest usubst assms Healthy_if RR_implies_R2c closure)
 
+(* TODO: fix proof
 lemma postR_rdes [rdes]: 
   assumes "P is RR" "R is RR"
-  shows "post\<^sub>R(\<^bold>R(P \<turnstile> Q \<diamondop> R)) = (P \<Rightarrow>\<^sub>r R)"
+  shows "post\<^sub>R(\<^bold>R(P \<turnstile> Q \<diamondop> R)) = (P \<longrightarrow>\<^sub>r R)"
   by (simp add: rea_post_RH_design unrest usubst assms Healthy_if RR_implies_R2c closure)
 
 lemma postR_srdes [rdes]: 
   assumes "P is RR" "R is RR"
-  shows "post\<^sub>R(\<^bold>R\<^sub>s(P \<turnstile> Q \<diamondop> R)) = (P \<Rightarrow>\<^sub>r R)"
+  shows "post\<^sub>R(\<^bold>R\<^sub>s(P \<turnstile> Q \<diamondop> R)) = (P \<longrightarrow>\<^sub>r R)"
   by (simp add: rea_post_RHS_design unrest usubst assms Healthy_if RR_implies_R2c closure)
     
 lemma preR_Chaos [rdes]: "pre\<^sub>R(Chaos) = false"
@@ -456,71 +486,79 @@ lemma periR_Miracle [rdes]: "peri\<^sub>R(Miracle) = false"
 
 lemma postR_Miracle [rdes]: "post\<^sub>R(Miracle) = false"
   by (simp add: Miracle_def, rel_auto)
+*)
 
 lemma preR_srdes_skip [rdes]: "pre\<^sub>R(II\<^sub>R) = true\<^sub>r"
-  by (rel_auto)
+  by pred_auto
 
 lemma periR_srdes_skip [rdes]: "peri\<^sub>R(II\<^sub>R) = false"
+  by pred_auto
+
+lemma postR_srdes_skip [rdes]: "post\<^sub>R(II\<^sub>R) = ((tr\<^sup>> = tr\<^sup><)\<^sub>e \<and> \<lceil>II\<rceil>\<^sub>R)"
+  by pred_auto
+
+(*
+lemma preR_INF [rdes]: "A \<noteq> {} \<Longrightarrow> pre\<^sub>R(\<Sqinter> A) = (\<And> P\<in>A. pre\<^sub>R(P))"
   by (rel_auto)
 
-lemma postR_srdes_skip [rdes]: "post\<^sub>R(II\<^sub>R) = ($tr\<acute> =\<^sub>u $tr \<and> \<lceil>II\<rceil>\<^sub>R)"
-  by (rel_auto)
-
-lemma preR_INF [rdes]: "A \<noteq> {} \<Longrightarrow> pre\<^sub>R(\<Sqinter> A) = (\<And> P\<in>A \<bullet> pre\<^sub>R(P))"
-  by (rel_auto)
-
-lemma periR_INF [rdes]: "peri\<^sub>R(\<Sqinter> A) = (\<Or> P\<in>A \<bullet> peri\<^sub>R(P))"
+lemma periR_INF [rdes]: "peri\<^sub>R(\<Sqinter> A) = (\<Or> P\<in>A. peri\<^sub>R(P))"
   by (rel_auto)
 
 lemma postR_INF [rdes]: "post\<^sub>R(\<Sqinter> A) = (\<Or> P\<in>A \<bullet> post\<^sub>R(P))"
   by (rel_auto)
+*)
 
-lemma preR_UINF [rdes]: "pre\<^sub>R(\<Sqinter> i \<bullet> P(i)) = (\<Squnion> i \<bullet> pre\<^sub>R(P(i)))"
-  by (rel_auto)
+lemma preR_UINF [rdes]: "pre\<^sub>R(\<Sqinter> i. P(i)) = (\<Squnion> i. pre\<^sub>R(P(i)))"
+  by pred_auto
 
-lemma periR_UINF [rdes]: "peri\<^sub>R(\<Sqinter> i \<bullet> P(i)) = (\<Sqinter> i \<bullet> peri\<^sub>R(P(i)))"
-  by (rel_auto)
+lemma periR_UINF [rdes]: "peri\<^sub>R(\<Sqinter> i. P(i)) = (\<Sqinter> i. peri\<^sub>R(P(i)))"
+  by pred_auto
 
-lemma postR_UINF [rdes]: "post\<^sub>R(\<Sqinter> i \<bullet> P(i)) = (\<Sqinter> i \<bullet> post\<^sub>R(P(i)))"
-  by (rel_auto)
+lemma postR_UINF [rdes]: "post\<^sub>R(\<Sqinter> i. P(i)) = (\<Sqinter> i. post\<^sub>R(P(i)))"
+  by pred_auto
 
-lemma preR_UINF_member [rdes]: "A \<noteq> {} \<Longrightarrow> pre\<^sub>R(\<Sqinter> i\<in>A \<bullet> P(i)) = (\<Squnion> i\<in>A \<bullet> pre\<^sub>R(P(i)))"
-  by (rel_auto)
+lemma preR_UINF_member [rdes]: "A \<noteq> {} \<Longrightarrow> pre\<^sub>R(\<Sqinter> i\<in>A. P(i)) = (\<Squnion> i\<in>A. pre\<^sub>R(P(i)))"
+  by pred_auto
     
-lemma preR_UINF_member_2 [rdes]: "A \<noteq> {} \<Longrightarrow> pre\<^sub>R(\<Sqinter> (i,j)\<in>A \<bullet> P i j) = (\<Squnion> (i,j)\<in>A \<bullet> pre\<^sub>R(P i j))"
-  by (rel_auto)
+lemma preR_UINF_member_2 [rdes]: "A \<noteq> {} \<Longrightarrow> pre\<^sub>R(\<Sqinter> (i,j)\<in>A. P i j) = (\<Squnion> (i,j)\<in>A. pre\<^sub>R(P i j))"
+  by pred_auto
 
-lemma preR_UINF_member_3 [rdes]: "A \<noteq> {} \<Longrightarrow> pre\<^sub>R(\<Sqinter> (i,j,k)\<in>A \<bullet> P i j k) = (\<Squnion> (i,j,k)\<in>A \<bullet> pre\<^sub>R(P i j k))"
-  by (rel_auto)
+lemma preR_UINF_member_3 [rdes]: "A \<noteq> {} \<Longrightarrow> pre\<^sub>R(\<Sqinter> (i,j,k)\<in>A. P i j k) = (\<Squnion> (i,j,k)\<in>A. pre\<^sub>R(P i j k))"
+  by pred_auto
 
-lemma periR_UINF_member [rdes]: "peri\<^sub>R(\<Sqinter> i\<in>A \<bullet> P(i)) = (\<Sqinter> i\<in>A \<bullet> peri\<^sub>R(P(i)))"
-  by (rel_auto)
-    
-lemma periR_UINF_member_2 [rdes]: "peri\<^sub>R(\<Sqinter> (i,j)\<in>A \<bullet> P i j) = (\<Sqinter> (i,j)\<in>A \<bullet> peri\<^sub>R(P i j))"
-  by (rel_auto)
+lemma periR_UINF_member [rdes]: "peri\<^sub>R(\<Sqinter> i\<in>A. P(i)) = (\<Sqinter> i\<in>A. peri\<^sub>R(P(i)))"
+  by pred_auto
+
+(* TODO: fix these lemmata
+lemma periR_UINF_member_2 [rdes]: "peri\<^sub>R(\<Sqinter> (i,j)\<in>A. P i j) = (\<Sqinter> (i,j)\<in>A. peri\<^sub>R(P i j))"
+  oops
 
 lemma periR_UINF_member_3 [rdes]: "peri\<^sub>R(\<Sqinter> (i,j,k)\<in>A \<bullet> P i j k) = (\<Sqinter> (i,j,k)\<in>A \<bullet> peri\<^sub>R(P i j k))"
   by (rel_auto)
+*)
 
-lemma postR_UINF_member [rdes]: "post\<^sub>R(\<Sqinter> i\<in>A \<bullet> P(i)) = (\<Sqinter> i\<in>A \<bullet> post\<^sub>R(P(i)))"
-  by (rel_auto)
+lemma postR_UINF_member [rdes]: "post\<^sub>R(\<Sqinter> i\<in>A. P(i)) = (\<Sqinter> i\<in>A. post\<^sub>R(P(i)))"
+  by pred_auto
 
+(* TODO: fix these lemmata
 lemma postR_UINF_member_2 [rdes]: "post\<^sub>R(\<Sqinter> (i,j)\<in>A \<bullet> P i j) = (\<Sqinter> (i,j)\<in>A \<bullet> post\<^sub>R(P i j))"
   by (rel_auto)
     
 lemma postR_UINF_member_3 [rdes]: "post\<^sub>R(\<Sqinter> (i,j,k)\<in>A \<bullet> P i j k) = (\<Sqinter> (i,j,k)\<in>A \<bullet> post\<^sub>R(P i j k))"
   by (rel_auto)    
-    
+*)
+
 lemma preR_inf [rdes]: "pre\<^sub>R(P \<sqinter> Q) = (pre\<^sub>R(P) \<and> pre\<^sub>R(Q))"
-  by (rel_auto)
+  by pred_auto
 
 lemma periR_inf [rdes]: "peri\<^sub>R(P \<sqinter> Q) = (peri\<^sub>R(P) \<or> peri\<^sub>R(Q))"
-  by (rel_auto)
+  by pred_auto
 
 lemma postR_inf [rdes]: "post\<^sub>R(P \<sqinter> Q) = (post\<^sub>R(P) \<or> post\<^sub>R(Q))"
-  by (rel_auto)
+  by pred_auto
 
-lemma preR_SUP [rdes]: "pre\<^sub>R(\<Squnion> A) = (\<Or> P\<in>A \<bullet> pre\<^sub>R(P))"
+(*
+lemma preR_SUP [rdes]: "pre\<^sub>R(\<Squnion> A) = (\<Or> P\<in>A. pre\<^sub>R(P))"
   by (rel_auto)
 
 lemma periR_SUP [rdes]: "A \<noteq> {} \<Longrightarrow> peri\<^sub>R(\<Squnion> A) = (\<And> P\<in>A \<bullet> peri\<^sub>R(P))"
@@ -528,33 +566,39 @@ lemma periR_SUP [rdes]: "A \<noteq> {} \<Longrightarrow> peri\<^sub>R(\<Squnion>
 
 lemma postR_SUP [rdes]: "A \<noteq> {} \<Longrightarrow> post\<^sub>R(\<Squnion> A) = (\<And> P\<in>A \<bullet> post\<^sub>R(P))"
   by (rel_auto)
+*)
 
 subsection \<open> Formation laws \<close>
 
 subsubsection \<open> Regular \<close>
 
+(* TODO: this proof really should be working 
 lemma rdes_skip_tri_design [rdes_def]: "II\<^sub>C = \<^bold>R(true\<^sub>r \<turnstile> false \<diamondop> II\<^sub>r)"
-  apply (simp add: skip_rea_def, rel_auto)
+  apply (simp add: skip_rea_def, pred_auto)
   using minus_zero_eq apply blast+
   done
+*)
 
+(* TODO: this proof really should be working 
 lemma RH_tri_design_form:
   assumes "P\<^sub>1 is RR" "P\<^sub>2 is RR" "P\<^sub>3 is RR"
-  shows "\<^bold>R(P\<^sub>1 \<turnstile> P\<^sub>2 \<diamondop> P\<^sub>3) = (II\<^sub>C \<triangleleft> $wait \<triangleright> (($ok \<and> P\<^sub>1) \<Rightarrow>\<^sub>r ($ok\<acute> \<and> (P\<^sub>2 \<diamondop> P\<^sub>3))))"
+  shows "\<^bold>R(P\<^sub>1 \<turnstile> P\<^sub>2 \<diamondop> P\<^sub>3) = (II\<^sub>C \<triangleleft> wait\<^sup>< \<triangleright> ((ok\<^sup>< \<and> P\<^sub>1) \<longrightarrow>\<^sub>r (ok\<^sup>> \<and> (P\<^sub>2 \<diamondop> P\<^sub>3))))"
 proof -
-  have "\<^bold>R(RR(P\<^sub>1) \<turnstile> RR(P\<^sub>2) \<diamondop> RR(P\<^sub>3)) = (II\<^sub>C \<triangleleft> $wait \<triangleright> (($ok \<and> RR(P\<^sub>1)) \<Rightarrow>\<^sub>r ($ok\<acute> \<and> (RR(P\<^sub>2) \<diamondop> RR(P\<^sub>3)))))"
-    apply (rel_auto) using minus_zero_eq by blast
+  have "\<^bold>R(RR(P\<^sub>1) \<turnstile> RR(P\<^sub>2) \<diamondop> RR(P\<^sub>3)) = (II\<^sub>C \<triangleleft> wait\<^sup>< \<triangleright> ((ok\<^sup>< \<and> RR(P\<^sub>1)) \<longrightarrow>\<^sub>r (ok\<^sup>> \<and> (RR(P\<^sub>2) \<diamondop> RR(P\<^sub>3)))))"
+    apply (pred_auto)
+    using minus_zero_eq by blast
   thus ?thesis
     by (simp add: Healthy_if assms)
 qed
+*)
 
 lemma RH_design_pre_post_form:
   "\<^bold>R((\<not> P\<^sup>f\<^sub>f) \<turnstile> P\<^sup>t\<^sub>f) = \<^bold>R(pre\<^sub>R(P) \<turnstile> cmt\<^sub>R(P))"
 proof -
-  have "\<^bold>R((\<not> P\<^sup>f\<^sub>f) \<turnstile> P\<^sup>t\<^sub>f) = \<^bold>R((\<not> P\<^sup>f\<^sub>f)\<lbrakk>true/$ok\<rbrakk> \<turnstile> P\<^sup>t\<^sub>f\<lbrakk>true/$ok\<rbrakk>)"
+  have "\<^bold>R((\<not> P\<^sup>f\<^sub>f) \<turnstile> P\<^sup>t\<^sub>f) = \<^bold>R((\<not> P\<^sup>f\<^sub>f)\<lbrakk>True/ok\<^sup><\<rbrakk> \<turnstile> P\<^sup>t\<^sub>f\<lbrakk>True/ok\<^sup><\<rbrakk>)"
     by (simp add: design_subst_ok)
   also have "... = \<^bold>R(pre\<^sub>R(P) \<turnstile> cmt\<^sub>R(P))"
-    by (simp add: pre\<^sub>R_def cmt\<^sub>R_def usubst, rel_auto)
+    by (simp add: pre\<^sub>R_def cmt\<^sub>R_def usubst, pred_auto)
   finally show ?thesis .
 qed
 
@@ -573,16 +617,18 @@ proof -
 qed
 
 lemma RD_reactive_tri_design_lemma:
-  "RD(P) = \<^bold>R((\<not> P\<^sup>f\<^sub>f) \<turnstile> P\<^sup>t\<^sub>f\<lbrakk>true/$wait\<acute>\<rbrakk> \<diamondop> P\<^sup>t\<^sub>f\<lbrakk>false/$wait\<acute>\<rbrakk>)"
-  by (simp add: RD_RH_design_form wait'_cond_split)
+  "RD(P) = \<^bold>R((\<not> P\<^sup>f\<^sub>f) \<turnstile> P\<^sup>t\<^sub>f\<lbrakk>True/wait\<^sup>>\<rbrakk> \<diamondop> P\<^sup>t\<^sub>f\<lbrakk>False/wait\<^sup>>\<rbrakk>)"
+  apply (simp add: RD_RH_design_form wait'_cond_split)
+  oops
 
+(*
 lemma RD_as_reactive_tri_design:
   "RD(P) = \<^bold>R(pre\<^sub>R(P) \<turnstile> peri\<^sub>R(P) \<diamondop> post\<^sub>R(P))"
 proof -
-  have "RD(P) = \<^bold>R((\<not> P\<^sup>f\<^sub>f) \<turnstile> P\<^sup>t\<^sub>f\<lbrakk>true/$wait\<acute>\<rbrakk> \<diamondop> P\<^sup>t\<^sub>f\<lbrakk>false/$wait\<acute>\<rbrakk>)"
+  have "RD(P) = \<^bold>R((\<not> P\<^sup>f\<^sub>f) \<turnstile> P\<^sup>t\<^sub>f\<lbrakk>True/wait\<^sup>>\<rbrakk> \<diamondop> P\<^sup>t\<^sub>f\<lbrakk>False/wait\<^sup>>\<rbrakk>)"
     by (simp add: RD_RH_design_form wait'_cond_split)
   also have "... = \<^bold>R(pre\<^sub>R(P) \<turnstile> peri\<^sub>R(P) \<diamondop> post\<^sub>R(P))"
-    by (rel_auto)
+    by pred_auto
   finally show ?thesis .
 qed
 
@@ -593,9 +639,11 @@ lemma RD_reactive_tri_design:
     
 lemma RD_elimination [RD_elim]: "\<lbrakk> P is RD; Q(\<^bold>R(pre\<^sub>R(P) \<turnstile> peri\<^sub>R(P) \<diamondop> post\<^sub>R(P)))  \<rbrakk> \<Longrightarrow> Q(P)"
   by (simp add: RD_reactive_tri_design)
-    
+*)
+
+(*
 lemma RH_tri_design_is_RD [closure]:
-  assumes "$ok\<acute> \<sharp> P" "$ok\<acute> \<sharp> Q" "$ok\<acute> \<sharp> R"
+  assumes "$ok\<^sup>> \<sharp> P" "$ok\<^sup>> \<sharp> Q" "$ok\<^sup>> \<sharp> R"
   shows "\<^bold>R(P \<turnstile> Q \<diamondop> R) is RD"
   by (rule RH_design_is_RD, simp_all add: unrest assms)
 
@@ -603,12 +651,16 @@ lemma RD_rdes_intro [closure]:
   assumes "P is RR" "Q is RR" "R is RR"
   shows "\<^bold>R(P \<turnstile> Q \<diamondop> R) is RD"
   by (rule RH_tri_design_is_RD, simp_all add: unrest closure assms)
+*)
 
 subsubsection \<open> Stateful \<close>
 
+(* TODO: figure out why this isn't working *)
 lemma srdes_skip_tri_design [rdes_def]: "II\<^sub>R = \<^bold>R\<^sub>s(true\<^sub>r \<turnstile> false \<diamondop> II\<^sub>r)"
-  by (simp add: srdes_skip_def, rel_auto)
+  apply (simp add: srdes_skip_def, pred_auto)
+  oops
 
+(*
 lemma Chaos_tri_def [rdes_def]: "Chaos = \<^bold>R\<^sub>s(false \<turnstile> false \<diamondop> false)"
   by (simp add: Chaos_def design_false_pre)
 
@@ -694,20 +746,22 @@ lemma UINF_R1_R2s_cmt_SRD:
   assumes "A \<subseteq> \<lbrakk>SRD\<rbrakk>\<^sub>H"
   shows "(\<Sqinter> P \<in> A \<bullet> R1 (R2s (cmt\<^sub>R P))) = (\<Sqinter> P \<in> A \<bullet> cmt\<^sub>R P)"
   by (rule UINF_cong[of A], metis (mono_tags, lifting) Ball_Collect R1_R2s_cmt_SRD assms)
+*)
 
 subsubsection \<open> Order laws \<close>
 
 lemma preR_antitone: "P \<sqsubseteq> Q \<Longrightarrow> pre\<^sub>R(Q) \<sqsubseteq> pre\<^sub>R(P)"
-  by (rel_auto)
+  by pred_auto
 
 lemma periR_monotone: "P \<sqsubseteq> Q \<Longrightarrow> peri\<^sub>R(P) \<sqsubseteq> peri\<^sub>R(Q)"
-  by (rel_auto)
+  by pred_auto
 
 lemma postR_monotone: "P \<sqsubseteq> Q \<Longrightarrow> post\<^sub>R(P) \<sqsubseteq> post\<^sub>R(Q)"
-  by (rel_auto)
+  by pred_auto
 
 subsection \<open> Composition laws \<close>
 
+(*
 theorem R1_design_composition_RR:
   assumes "P is RR" "Q is RR" "R is RR" "S is RR"
   shows
@@ -1484,5 +1538,7 @@ qed
 
 lemma Monotonic_SRD_comp [closure]: "Monotonic ((;;) P \<circ> SRD)"
   by (simp add: mono_def R1_R2c_is_R2 R2_mono R3h_mono RD1_mono RD2_mono RHS_def SRD_def seqr_mono)
+
+*)
 
 end
