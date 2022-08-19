@@ -3,17 +3,22 @@ section \<open> Normal Reactive Designs \<close>
 theory utp_rdes_normal
   imports 
     utp_rdes_triples
-    "UTP1-KAT.utp_kleene"
+    (* "UTP1-KAT.utp_kleene" *)
 begin
 
 text \<open> These additional healthiness conditions are analogous to H3 \<close>
 
 definition RD3 where
-[upred_defs]: "RD3(P) = P ;; II\<^sub>R"
+[pred]: "RD3(P) = P ;; II\<^sub>R"
+
+expr_constructor RD3
 
 definition RD3c where
-[upred_defs]: "RD3c(P) = P ;; II\<^sub>C"
+[pred]: "RD3c(P) = P ;; II\<^sub>C"
 
+expr_constructor RD3c
+
+(*
 lemma RD3_idem: "RD3(RD3(P)) = RD3(P)"
 proof -
   have a: "II\<^sub>R ;; II\<^sub>R = II\<^sub>R"
@@ -24,6 +29,7 @@ qed
 
 lemma RD3_Idempotent [closure]: "Idempotent RD3"
   by (simp add: Idempotent_def RD3_idem)
+*)
 
 lemma RD3_continuous: "RD3(\<Sqinter>A) = (\<Sqinter>P\<in>A. RD3(P))"
   by (simp add: RD3_def seq_Sup_distr)
@@ -34,7 +40,7 @@ lemma RD3_Continuous [closure]: "Continuous RD3"
 lemma RD3_right_subsumes_RD2: "RD2(RD3(P)) = RD3(P)"
 proof -
   have a:"II\<^sub>R ;; J = II\<^sub>R"
-    by (rel_auto)
+    by (pred_auto; blast)
   show ?thesis
     by (metis (no_types, opaque_lifting) H2_def RD2_def RD3_def a seqr_assoc)
 qed
@@ -42,7 +48,7 @@ qed
 lemma RD3c_idem: "RD3c(RD3c(P)) = RD3c(P)"
 proof -
   have a: "II\<^sub>C ;; II\<^sub>C = II\<^sub>C"
-    by simp
+    by pred_auto
   show ?thesis
     by (simp add: RD3c_def seqr_assoc a)
 qed
@@ -59,7 +65,7 @@ lemma RD3c_Continuous [closure]: "Continuous RD3c"
 lemma RD3c_right_subsumes_RD2: "RD2 (RD3c P) = RD3c P"
 proof -
   have a:"II\<^sub>C ;; J = II\<^sub>C"
-    by (rel_auto)
+    by pred_auto
   thus ?thesis
     by (simp add: a H2_def RD2_def RD3c_def seqr_assoc)
 qed
@@ -67,7 +73,7 @@ qed
 lemma RD3_left_subsumes_RD2: "RD3(RD2(P)) = RD3(P)"
 proof -
   have a:"J ;; II\<^sub>R = II\<^sub>R"
-    by (rel_simp, safe, blast+)
+    by (pred_auto; blast)
   show ?thesis
     by (metis (no_types, opaque_lifting) H2_def RD2_def RD3_def a seqr_assoc)
 qed
@@ -75,7 +81,7 @@ qed
 lemma RD3c_left_subsumes_RD2: "RD3c(RD2(P)) = RD3c(P)"
 proof -
   have a:"J ;; II\<^sub>C = II\<^sub>C"
-    by (rel_auto)
+    by pred_auto
   show ?thesis
     by (simp add: H2_def RD2_def RD3c_def a seqr_assoc)
 qed
@@ -83,8 +89,9 @@ qed
 lemma RD3_implies_RD2: "P is RD3 \<Longrightarrow> P is RD2"
   by (metis Healthy_def RD3_right_subsumes_RD2)
 
+(*
 lemma RD3_intro_pre:
-  assumes "P is SRD" "(\<not>\<^sub>r pre\<^sub>R(P)) ;; true\<^sub>r = (\<not>\<^sub>r pre\<^sub>R(P))" "$st\<acute> \<sharp> peri\<^sub>R(P)"
+  assumes "P is SRD" "(\<not>\<^sub>r pre\<^sub>R(P)) ;; true\<^sub>r = (\<not>\<^sub>r pre\<^sub>R(P))" "$st\<^sup>> \<sharp> peri\<^sub>R(P)"
   shows "P is RD3"
 proof -
   have "RD3(P) = \<^bold>R\<^sub>s ((\<not>\<^sub>r pre\<^sub>R P) wp\<^sub>r false \<turnstile> (\<exists> $st\<acute> \<bullet> peri\<^sub>R P) \<diamondop> post\<^sub>R P)"
@@ -127,23 +134,27 @@ lemma RHS_tri_design_RD3_intro_form:
   apply (subst R1_right_unit_lemma)
     apply (simp_all add: assms unrest)
   done
+*)
 
 lemma RD1_RD3_commute: "RD1(RD3(P)) = RD3(RD1(P))"
-  by (rel_auto, blast+)
+  by (pred_auto, blast+)
 
 lemma RD1_RD3c_commute: "RD1(RD3c(P)) = RD3c(RD1(P))"
-  by (rel_auto)
+  by pred_auto
 
 definition NSRD :: "('s,'t::trace,'\<alpha>) hrel_rsp \<Rightarrow> ('s,'t,'\<alpha>) hrel_rsp"
-where [upred_defs]: "NSRD = RD1 \<circ> RD3 \<circ> RHS"
+where [pred]: "NSRD = RD1 \<circ> RD3 \<circ> RHS"
 
 definition NRD :: "('t::trace,'\<alpha>) hrel_rp \<Rightarrow> ('t,'\<alpha>) hrel_rp"
-where [upred_defs]: "NRD = RD1 \<circ> RD3c \<circ> RH"
+where [pred]: "NRD = RD1 \<circ> RD3c \<circ> RH"
+
+expr_constructor NSRD NRD
 
 lemma NRD_is_RD [closure]: "P is NRD \<Longrightarrow> P is RD"
   by (simp add: Healthy_def NRD_def RD_def)
      (metis (no_types, lifting) R1_R3c_commute R1_seqr R1_skip_rea R2c_R1_seq R2c_R3c_commute R2c_skip_rea R3_skipr R3c_semir_form R3c_via_RD1_R3 RD1_R1_commute RD1_R2c_commute RD1_R3c_commute RD1_RD2_commute RD1_idem RD3c_def RD3c_right_subsumes_RD2 RH_def RP_def RP_idem skip_rea_RD1_skip)
 
+(*
 lemma NRD_elim [RD_elim]: 
   "\<lbrakk> P is NRD; Q(\<^bold>R(pre\<^sub>R(P) \<turnstile> peri\<^sub>R(P) \<diamondop> post\<^sub>R(P))) \<rbrakk> \<Longrightarrow> Q(P)"
   by (simp add: RD_elim closure)
@@ -912,5 +923,6 @@ lemma StarR_rdes_def [rdes_def]:
   shows "(\<^bold>R\<^sub>s(P \<turnstile> Q \<diamondop> R))\<^sup>\<star>\<^sup>R = \<^bold>R\<^sub>s((R\<^sup>\<star>\<^sup>r wp\<^sub>r P) \<turnstile> (R\<^sup>\<star>\<^sup>r ;; Q) \<diamondop> R\<^sup>\<star>\<^sup>r)"
   by (simp add: StarR_def rrel_theory.Star_alt_def nsrdes_theory.Star_alt_def closure assms)
      (simp add: rrel_theory.Star_alt_def assms closure rdes_def unrest rpred disj_upred_def)
+*)
 
 end
